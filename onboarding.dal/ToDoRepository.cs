@@ -45,5 +45,10 @@
             }
             return false;
         }
+
+        public List<ToDoItem> GetToDoByTitle(string title) {
+            List<ToDoItem> filteredToDos = toDos.Where(t => t.Title.ToLower().Contains(title)).OrderBy(t => t.Title).ToList();
+            return filteredToDos;
+        }
     }
 }

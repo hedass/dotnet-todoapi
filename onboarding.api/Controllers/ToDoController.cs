@@ -117,5 +117,21 @@ namespace onboarding.api.Controllers
             return Ok(toDoItem);
         }
 
+        /// <summary>
+        /// Search todo by title
+        /// </summary>
+        /// <param name="query"></param>
+        /// <returns></returns>
+        /// <response code="200">if search success</response>
+        [HttpGet("search")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public IActionResult GetToDoByTitle([FromQuery] string query)
+        {
+
+            List<ToDoItem> toDoItem = _toDoService.GetToDoByTitle(query);
+
+            return Ok(toDoItem);
+        }
+
     }
 }

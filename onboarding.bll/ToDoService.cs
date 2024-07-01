@@ -15,7 +15,8 @@ namespace onboarding.bll
 
         public ToDoItem AddToDo(string title)
         {
-            return _repository.AddToDo(title);
+            string trimmedTitle = title.ToLower().Trim();
+            return _repository.AddToDo(trimmedTitle);
         }
 
         public ToDoItem? GetToDoById(int id)
@@ -31,6 +32,11 @@ namespace onboarding.bll
         public ToDoItem? UpdateToDo(int id, string title, bool completed)
         {
             return _repository.UpdateToDo(id, title, completed);
+        }
+
+        public List<ToDoItem> GetToDoByTitle(string query) {
+            string normalizeQuery = query.ToLower();
+            return _repository.GetToDoByTitle(normalizeQuery);
         }
     }
 }
