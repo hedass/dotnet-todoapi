@@ -97,18 +97,22 @@ namespace onboarding.api.Controllers
         /// Update todo by given id
         /// </summary>
         /// <param name="id"></param>
-        /// <param name="title"></param>
-        /// <param name="completed"></param>
+        /// <param name="requestBody"></param>
         /// <returns></returns>
         /// <response code="200">if update success</response>
         /// <response code="404">If update failed / item not found</response>
         [HttpPut("{id}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public IActionResult UpdateToDo([FromRoute]int id, [FromBody] string title, bool completed)
+        public IActionResult UpdateToDo([FromRoute]int id, [FromBody] ToDoItemRequest requestBody)
         {
 
-            ToDoItem? toDoItem = _toDoService.UpdateToDo(id, title, completed);
+            if ( requestBody.Completed == null)
+            {
+                return BadRequest("inclomplete request body");
+            }
+
+            ToDoItem? toDoItem = _toDoService.UpdateToDo(id, requestBody.Title, (bool)requestBody.Completed);
             if (toDoItem is null)
             {
                 return NotFound();

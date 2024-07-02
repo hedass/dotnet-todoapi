@@ -1,53 +1,52 @@
-﻿namespace onboarding.dal
+﻿using Microsoft.EntityFrameworkCore;
+
+namespace onboarding.dal
 {
 
     public class ToDoRepository
     {
-        private static List<ToDoItem> toDos = new List<ToDoItem>();
+        private readonly DbSet<ToDoItem> dbSet;
+
+        public ToDoItemDbContext Context { get; private set; }
+
+        public ToDoRepository(ToDoItemDbContext context)
+        {
+            Context = context;
+            dbSet = context.Set<ToDoItem>();
+        }
 
         public ToDoItem AddToDo(string title)
         {
-            int toDoId = toDos.Count + 1;
-            var toDo = new ToDoItem { Id = toDoId, Title = title };
-            toDos.Add(toDo);
+            var toDo = new ToDoItem { Title = title };
+            dbSet.Add(toDo);
             return toDo;
         }
 
         public ToDoItem? GetToDoById(int id)
         {
-            return toDos.Find(toDo => toDo.Id == id);
+            return dbSet.Find(id);
         }
 
         public List<ToDoItem> GetAllToDos()
         {
-            return toDos;
+            return dbSet.ToList();
         }
 
-        public ToDoItem? UpdateToDo(int todoId, string title, bool completed)
+        public void UpdateToDo(ToDoItem toDo)
         {
-            var todo = GetToDoById(todoId);
-            if (todo != null)
-            {
-                todo.Title = title;
-                todo.Completed = completed;
-                return todo;
-            }
-            return null;
+            dbSet.Attach(toDo);
+            Context.Entry(toDo).State = EntityState.Modified;
         }
 
-        public bool DeleteToDoById(int todoId)
+        public void DeleteToDo(ToDoItem toDo)
         {
-            var todo = GetToDoById(todoId);
-            if (todo != null)
-            {
-                toDos.Remove(todo);
-                return true;
-            }
-            return false;
+            if (toDo == null) return;
+            
+            dbSet.Remove(toDo);
         }
 
         public List<ToDoItem> GetToDoByTitle(string title) {
-            List<ToDoItem> filteredToDos = toDos.Where(t => t.Title.ToLower().Contains(title)).OrderBy(t => t.Title).ToList();
+            List<ToDoItem> filteredToDos = dbSet.Where(t => t.Title.ToLower().Contains(title)).OrderBy(t => t.Title).ToList();
             return filteredToDos;
         }
     }

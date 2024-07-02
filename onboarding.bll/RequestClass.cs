@@ -1,4 +1,5 @@
 ﻿
+using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 
 namespace onboarding.bll
@@ -7,5 +8,8 @@ namespace onboarding.bll
     {
         [Required]
         public string Title { get; set; } = string.Empty;
+        [Required]
+        [DefaultValue(false)]
+        public bool Completed { get; set; }
     }
 }

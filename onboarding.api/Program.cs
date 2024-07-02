@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Rewrite;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using onboarding.bll;
 using onboarding.dal;
@@ -6,9 +6,20 @@ using System.Reflection;
 
 var builder = WebApplication.CreateBuilder(args);
 
+var connection = Environment.GetEnvironmentVariable("AZURE_SQL_CONNECTIONSTRING");
+if (builder.Environment.IsDevelopment())
+{
+    builder.Configuration.AddEnvironmentVariables().AddJsonFile("appsettings.Development.json");
+    connection = builder.Configuration.GetConnectionString("AZURE_SQL_CONNECTIONSTRING");
+}
+
+Console.WriteLine(connection);
+builder.Services.AddDbContext<ToDoItemDbContext>(options => options.UseSqlServer(connection));
+
 // Add services to the container.
-builder.Services.AddScoped<ToDoService>();
 builder.Services.AddScoped<ToDoRepository>();
+builder.Services.AddScoped<UnitOfWork>();
+builder.Services.AddScoped<ToDoService>();
 
 builder.Services.AddControllers().ConfigureApiBehaviorOptions(x => { x.SuppressMapClientErrors = true; });
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
