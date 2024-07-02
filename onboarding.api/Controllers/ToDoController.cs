@@ -106,12 +106,6 @@ namespace onboarding.api.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public IActionResult UpdateToDo([FromRoute]int id, [FromBody] ToDoItemRequest requestBody)
         {
-
-            if ( requestBody.Completed == null)
-            {
-                return BadRequest("inclomplete request body");
-            }
-
             ToDoItem? toDoItem = _toDoService.UpdateToDo(id, requestBody.Title, (bool)requestBody.Completed);
             if (toDoItem is null)
             {
