@@ -13,10 +13,11 @@ if (builder.Environment.IsDevelopment())
     connection = builder.Configuration.GetConnectionString("AZURE_SQL_CONNECTIONSTRING");
 }
 
-Console.WriteLine(connection);
 builder.Services.AddDbContext<ToDoItemDbContext>(options => options.UseSqlServer(connection));
 
 // Add services to the container.
+builder.Services.AddHostedService<SchedulerService>();
+
 builder.Services.AddScoped<ToDoRepository>();
 builder.Services.AddScoped<UnitOfWork>();
 builder.Services.AddScoped<ToDoService>();
