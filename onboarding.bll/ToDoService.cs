@@ -1,6 +1,8 @@
-﻿using onboarding.dal;
+﻿using Microsoft.Extensions.Caching.Distributed;
 using RabbitMQ.Client;
 using System.Text;
+using System.Text.Json;
+using onboarding.dal;
 
 namespace onboarding.bll
 {
@@ -8,10 +10,13 @@ namespace onboarding.bll
     {
         private readonly IConnection _connection;
         private readonly IModel _channel;
-        private readonly UnitOfWork _unitOfWork; 
-        public ToDoService(UnitOfWork unitOfWork)
+        private readonly UnitOfWork _unitOfWork;
+        private readonly IDistributedCache _cache;
+        public ToDoService(UnitOfWork unitOfWork, IDistributedCache cache)
         {
             _unitOfWork = unitOfWork;
+            _cache = cache;
+
             var factory = new ConnectionFactory()
             {
                 HostName = "localhost",
@@ -37,14 +42,23 @@ namespace onboarding.bll
             ToDoItem toDo = _unitOfWork.ToDoRepository.AddToDo(trimmedTitle);
             _unitOfWork.Save();
 
+            string serializedToDo = JsonSerializer.Serialize(toDo); 
+            _cache.SetStringAsync($"todoitem:{toDo.Id}", serializedToDo, new DistributedCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(1)
+            });
+
             this.SendNotification($"ToDo item added: {toDo.Title}");
 
             return toDo;
         }
 
         public ToDoItem? GetToDoById(int id)
-        { 
-            return _unitOfWork.ToDoRepository.GetToDoById(id);
+        {
+            string serializedToDo = _cache.GetString($"todoitem:{id}");
+            ToDoItem? toDo = serializedToDo == null ? _unitOfWork.ToDoRepository.GetToDoById(id) : JsonSerializer.Deserialize<ToDoItem>(serializedToDo);
+
+            return toDo;
         }
 
         public bool DeleteToDoById(int id)
@@ -54,6 +68,8 @@ namespace onboarding.bll
             {
                 _unitOfWork.ToDoRepository.DeleteToDo(toDo);
                 _unitOfWork.Save();
+
+                _cache.RemoveAsync($"todoitem:{toDo.Id}");
 
                 this.SendNotification($"ToDo item deleted: {toDo.Title}");
 
@@ -75,6 +91,12 @@ namespace onboarding.bll
 
                 _unitOfWork.ToDoRepository.UpdateToDo(toDo);
                 _unitOfWork.Save();
+
+                string serializedToDo = JsonSerializer.Serialize(toDo);
+                _cache.SetStringAsync($"todoitem:{toDo.Id}", serializedToDo, new DistributedCacheEntryOptions
+                {
+                    AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(1)
+                });
 
                 this.SendNotification($"ToDo item updated: \n{(toDo.Title != oldTitle ? $"{oldTitle} -> {title}\n" : "")}{(toDo.Completed != oldCompleted ? $"{oldCompleted} -> {completed}\n" : "")}");
 

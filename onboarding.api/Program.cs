@@ -49,6 +49,12 @@ builder.Services.AddSwaggerGen(options =>
     options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, xmlFilename));
 });
 
+builder.Services.AddStackExchangeRedisCache(options =>
+{
+    options.Configuration = builder.Configuration.GetConnectionString("AZURE_CACHE_CONNECTIONSTRING");
+    options.InstanceName = "todosean";
+});
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
