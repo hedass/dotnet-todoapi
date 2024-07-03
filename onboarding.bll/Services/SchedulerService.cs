@@ -1,18 +1,20 @@
 ﻿using Quartz.Impl;
 using Quartz;
 using Microsoft.Extensions.Hosting;
+using onboarding.bll.Jobs;
+using onboarding.bll.Interfaces;
 
-namespace onboarding.bll
+namespace onboarding.bll.Services
 {
-    public class SchedulerService : BackgroundService
+    public class SchedulerService : BackgroundService, ISchedulerService
     {
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            await SchedulerService.StartAsync();
+            await StartAsync();
             await Task.Yield();
         }
-        public static async Task StartAsync()
+        public async Task StartAsync()
         {
             ISchedulerFactory schedulerFactory = new StdSchedulerFactory();
             IScheduler scheduler = await schedulerFactory.GetScheduler();

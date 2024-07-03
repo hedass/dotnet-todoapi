@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace onboarding.dal
+namespace onboarding.dal.Models
 {
     public class ToDoItem
     {

@@ -3,19 +3,21 @@ using RabbitMQ.Client;
 using System.Text;
 using System.Text.Json;
 using onboarding.dal;
+using onboarding.bll.Interfaces;
+using onboarding.dal.Models;
 
-namespace onboarding.bll
+namespace onboarding.bll.Services
 {
-    public class ToDoService
+    public class ToDoService: IToDoService
     {
         private readonly IConnection _connection;
         private readonly IModel _channel;
         private readonly UnitOfWork _unitOfWork;
-        private readonly IDistributedCache _cache;
-        public ToDoService(UnitOfWork unitOfWork, IDistributedCache cache)
+        private readonly IRedisService _redisService;
+        public ToDoService(UnitOfWork unitOfWork, IRedisService redisService)
         {
             _unitOfWork = unitOfWork;
-            _cache = cache;
+            _redisService = redisService;
 
             var factory = new ConnectionFactory()
             {
@@ -28,7 +30,7 @@ namespace onboarding.bll
             _channel.QueueDeclare(queue: "notificationQueue", durable: false, exclusive: false, autoDelete: false, arguments: null);
         }
 
-        public void SendNotification(string msg) 
+        public void SendNotification(string msg)
         {
             var body = Encoding.UTF8.GetBytes(msg);
             _channel.BasicPublish(exchange: "", routingKey: "notificationQueue", basicProperties: null, body: body);
@@ -42,21 +44,17 @@ namespace onboarding.bll
             ToDoItem toDo = _unitOfWork.ToDoRepository.AddToDo(trimmedTitle);
             _unitOfWork.Save();
 
-            string serializedToDo = JsonSerializer.Serialize(toDo); 
-            _cache.SetStringAsync($"todoitem:{toDo.Id}", serializedToDo, new DistributedCacheEntryOptions
-            {
-                AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(1)
-            });
+            _redisService.SetStringAsync<ToDoItem>($"todoitem:{toDo.Id}", toDo);
 
-            this.SendNotification($"ToDo item added: {toDo.Title}");
+            SendNotification($"ToDo item added: {toDo.Title}");
 
             return toDo;
         }
 
         public ToDoItem? GetToDoById(int id)
         {
-            string serializedToDo = _cache.GetString($"todoitem:{id}");
-            ToDoItem? toDo = serializedToDo == null ? _unitOfWork.ToDoRepository.GetToDoById(id) : JsonSerializer.Deserialize<ToDoItem>(serializedToDo);
+            var toDo = _redisService.GetString<ToDoItem>($"todoitem:{id}");
+            toDo ??= _unitOfWork.ToDoRepository.GetToDoById(id);
 
             return toDo;
         }
@@ -69,9 +67,9 @@ namespace onboarding.bll
                 _unitOfWork.ToDoRepository.DeleteToDo(toDo);
                 _unitOfWork.Save();
 
-                _cache.RemoveAsync($"todoitem:{toDo.Id}");
+                _redisService.RemoveAsync($"todoitem:{toDo.Id}");
 
-                this.SendNotification($"ToDo item deleted: {toDo.Title}");
+                SendNotification($"ToDo item deleted: {toDo.Title}");
 
                 return true;
             }
@@ -92,20 +90,17 @@ namespace onboarding.bll
                 _unitOfWork.ToDoRepository.UpdateToDo(toDo);
                 _unitOfWork.Save();
 
-                string serializedToDo = JsonSerializer.Serialize(toDo);
-                _cache.SetStringAsync($"todoitem:{toDo.Id}", serializedToDo, new DistributedCacheEntryOptions
-                {
-                    AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(1)
-                });
+                _redisService.SetStringAsync($"todoitem:{toDo.Id}", toDo);
 
-                this.SendNotification($"ToDo item updated: \n{(toDo.Title != oldTitle ? $"{oldTitle} -> {title}\n" : "")}{(toDo.Completed != oldCompleted ? $"{oldCompleted} -> {completed}\n" : "")}");
+                SendNotification($"ToDo item updated: \n{(toDo.Title != oldTitle ? $"{oldTitle} -> {title}\n" : "")}{(toDo.Completed != oldCompleted ? $"{oldCompleted} -> {completed}\n" : "")}");
 
                 return toDo;
             }
             return null;
         }
 
-        public List<ToDoItem> GetToDoByTitle(string query) {
+        public List<ToDoItem> GetToDoByTitle(string query)
+        {
             string normalizeQuery = query.ToLower();
             return _unitOfWork.ToDoRepository.GetToDoByTitle(normalizeQuery);
         }

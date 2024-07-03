@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
-using onboarding.bll;
-using onboarding.dal;
+using onboarding.bll.DTO;
+using onboarding.bll.Interfaces;
+using onboarding.bll.Services;
+using onboarding.dal.Models;
 
 namespace onboarding.api.Controllers
 {
@@ -8,9 +10,9 @@ namespace onboarding.api.Controllers
     [Route("api/todo")]
     public class ToDoController : ControllerBase
     {
-        private readonly ToDoService _toDoService;
+        private readonly IToDoService _toDoService;
 
-        public ToDoController(ToDoService toDoService)
+        public ToDoController(IToDoService toDoService)
         {
             _toDoService = toDoService;
         }
@@ -59,7 +61,7 @@ namespace onboarding.api.Controllers
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public IActionResult AddToDo([FromBody] ToDoItemRequest toDoItemRequest)
+        public IActionResult AddToDo([FromBody] ToDoItemDTO toDoItemRequest)
         {
             if (string.IsNullOrEmpty(toDoItemRequest.Title))
             {
@@ -104,7 +106,7 @@ namespace onboarding.api.Controllers
         [HttpPut("{id}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public IActionResult UpdateToDo([FromRoute]int id, [FromBody] ToDoItemRequest requestBody)
+        public IActionResult UpdateToDo([FromRoute]int id, [FromBody] ToDoItemDTO requestBody)
         {
             ToDoItem? toDoItem = _toDoService.UpdateToDo(id, requestBody.Title, (bool)requestBody.Completed);
             if (toDoItem is null)

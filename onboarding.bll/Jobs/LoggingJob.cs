@@ -1,6 +1,6 @@
 ﻿using Quartz;
 
-namespace onboarding.bll
+namespace onboarding.bll.Jobs
 {
     public class LoggingJob : IJob
     {

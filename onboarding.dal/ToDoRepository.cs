@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using onboarding.dal.Models;
 
 namespace onboarding.dal
 {

@@ -2,9 +2,9 @@
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 
-namespace onboarding.bll
+namespace onboarding.bll.DTO
 {
-    public class ToDoItemRequest
+    public class ToDoItemDTO
     {
         [Required]
         public string Title { get; set; } = string.Empty;

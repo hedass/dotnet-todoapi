@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
-using onboarding.bll;
+using onboarding.bll.Interfaces;
+using onboarding.bll.Services;
 using onboarding.dal;
 using System.Reflection;
 
@@ -18,9 +19,10 @@ builder.Services.AddDbContext<ToDoItemDbContext>(options => options.UseSqlServer
 // Add services to the container.
 builder.Services.AddHostedService<SchedulerService>();
 
-builder.Services.AddScoped<ToDoRepository>();
 builder.Services.AddScoped<UnitOfWork>();
-builder.Services.AddScoped<ToDoService>();
+builder.Services.AddScoped<ToDoRepository>();
+builder.Services.AddScoped<IRedisService, RedisService>();
+builder.Services.AddScoped<IToDoService, ToDoService>();
 
 builder.Services.AddControllers().ConfigureApiBehaviorOptions(x => { x.SuppressMapClientErrors = true; });
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
