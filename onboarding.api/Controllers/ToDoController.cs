@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using onboarding.bll.DTO;
 using onboarding.bll.Interfaces;
-using onboarding.bll.Services;
 using onboarding.dal.Models;
 
 namespace onboarding.api.Controllers
