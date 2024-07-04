@@ -11,8 +11,6 @@ namespace onboarding.bll.Interfaces
 {
     public interface IToDoService
     {
-        public void SendNotification(string msg);
-
         public List<ToDoItem> GetAllToDos();
 
         public ToDoItem AddToDo(string title);

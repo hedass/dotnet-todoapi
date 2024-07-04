@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using onboarding.dal.Models;
 
-namespace onboarding.dal
+namespace onboarding.dal.Repository
 {
     public class ToDoItemDbContext : DbContext
     {

@@ -1,13 +1,7 @@
-﻿using Microsoft.Extensions.Caching.Distributed;
-using RabbitMQ.Client;
-using System.Text;
-using System.Text.Json;
-using onboarding.dal;
+﻿using RabbitMQ.Client;
 using onboarding.bll.Interfaces;
 using onboarding.dal.Models;
-using Microsoft.ApplicationInsights;
-using static Microsoft.ApplicationInsights.MetricDimensionNames.TelemetryContext;
-using Microsoft.ApplicationInsights.DataContracts;
+using onboarding.dal.Interface;
 
 namespace onboarding.bll.Services
 {
@@ -15,15 +9,15 @@ namespace onboarding.bll.Services
     {
         private readonly IConnection _connection;
         private readonly IModel _channel;
-        private readonly TelemetryClient _telemetryClient;
+        private readonly INotificationService _notificationService;
         
-        private readonly UnitOfWork _unitOfWork;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly IRedisService _redisService;
-        public ToDoService(UnitOfWork unitOfWork, IRedisService redisService, TelemetryClient telemetryClient)
+        public ToDoService(IUnitOfWork unitOfWork, IRedisService redisService, INotificationService notificationService)
         {
             _unitOfWork = unitOfWork;
             _redisService = redisService;
-            _telemetryClient = telemetryClient;
+            _notificationService = notificationService;
 
             var factory = new ConnectionFactory()
             {
@@ -36,51 +30,17 @@ namespace onboarding.bll.Services
             _channel.QueueDeclare(queue: "notificationQueue", durable: false, exclusive: false, autoDelete: false, arguments: null);
         }
 
-        public void SendNotification(string msg)
-        {
-            string queueName = "notificationQueue";
-            var dependencyTelemetry = new DependencyTelemetry
-            {
-                Type = "RabbitMQ",
-                Target = queueName,
-                Data = msg,
-                Name = "Send Message"
-            };
-
-            var operation = _telemetryClient.StartOperation(dependencyTelemetry);
-            try
-            {
-
-                var body = Encoding.UTF8.GetBytes(msg);
-                _channel.BasicPublish(exchange: "", routingKey: queueName, basicProperties: null, body: body);
-
-                _telemetryClient.TrackDependency(dependencyTelemetry);
-                operation.Telemetry.Success = true;
-            }
-            catch (Exception ex)
-            {
-                operation.Telemetry.Success = false;
-
-                _telemetryClient.TrackException(ex); 
-                _telemetryClient.TrackDependency(dependencyTelemetry);
-            }
-            finally
-            {
-                _telemetryClient.StopOperation(operation);
-            }
-        }
-
         public List<ToDoItem> GetAllToDos() { return _unitOfWork.ToDoRepository.GetAllToDos(); }
 
         public ToDoItem AddToDo(string title)
         {
-            string trimmedTitle = title.ToLower().Trim();
+            string trimmedTitle = title.Trim();
             ToDoItem toDo = _unitOfWork.ToDoRepository.AddToDo(trimmedTitle);
             _unitOfWork.Save();
 
             _redisService.SetStringAsync($"todoitem:{toDo.Id}", toDo);
 
-            SendNotification($"ToDo item added: {toDo.Title}");
+            _notificationService.SendNotification($"ToDo item added: {toDo.Title}");
 
             return toDo;
         }
@@ -103,7 +63,7 @@ namespace onboarding.bll.Services
 
                 _redisService.RemoveAsync($"todoitem:{toDo.Id}");
 
-                SendNotification($"ToDo item deleted: {toDo.Title}");
+                _notificationService.SendNotification($"ToDo item deleted: {toDo.Title}");
 
                 return true;
             }
@@ -126,7 +86,7 @@ namespace onboarding.bll.Services
 
                 _redisService.SetStringAsync($"todoitem:{toDo.Id}", toDo);
 
-                SendNotification($"ToDo item updated: \n{(toDo.Title != oldTitle ? $"{oldTitle} -> {title}\n" : "")}{(toDo.Completed != oldCompleted ? $"{oldCompleted} -> {completed}\n" : "")}");
+                _notificationService.SendNotification($"ToDo item updated: \n{(toDo.Title != oldTitle ? $"{oldTitle} -> {title}\n" : "")}{(toDo.Completed != oldCompleted ? $"{oldCompleted} -> {completed}\n" : "")}");
 
                 return toDo;
             }

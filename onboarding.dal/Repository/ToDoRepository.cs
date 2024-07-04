@@ -1,10 +1,11 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using onboarding.dal.Interfaces;
 using onboarding.dal.Models;
 
-namespace onboarding.dal
+namespace onboarding.dal.Repository
 {
 
-    public class ToDoRepository
+    public class ToDoRepository : IToDoRepository
     {
         private readonly DbSet<ToDoItem> dbSet;
 
@@ -42,11 +43,12 @@ namespace onboarding.dal
         public void DeleteToDo(ToDoItem toDo)
         {
             if (toDo == null) return;
-            
+
             dbSet.Remove(toDo);
         }
 
-        public List<ToDoItem> GetToDoByTitle(string title) {
+        public List<ToDoItem> GetToDoByTitle(string title)
+        {
             List<ToDoItem> filteredToDos = dbSet.Where(t => t.Title.ToLower().Contains(title)).OrderBy(t => t.Title).ToList();
             return filteredToDos;
         }

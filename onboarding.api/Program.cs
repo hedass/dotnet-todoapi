@@ -4,8 +4,10 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using onboarding.bll.Interfaces;
 using onboarding.bll.Services;
-using onboarding.dal;
+using onboarding.dal.Interface;
 using System.Reflection;
+using onboarding.dal.Repository;
+using onboarding.dal.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,7 +18,7 @@ builder.Services.AddApplicationInsightsTelemetry(options =>
 
 // Register TelemetryClient as a singleton
 builder.Services.AddSingleton<ITelemetryInitializer, OperationCorrelationTelemetryInitializer>();
-builder.Services.AddSingleton<TelemetryClient>();
+builder.Services.AddSingleton<ITelemetryClientService, TelemetryClientService>();
 
 var connection = Environment.GetEnvironmentVariable("AZURE_SQL_CONNECTIONSTRING");
 if (builder.Environment.IsDevelopment())
@@ -30,8 +32,9 @@ builder.Services.AddDbContext<ToDoItemDbContext>(options => options.UseSqlServer
 // Add services to the container.
 builder.Services.AddHostedService<SchedulerService>();
 
-builder.Services.AddScoped<UnitOfWork>();
-builder.Services.AddScoped<ToDoRepository>();
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<IToDoRepository, ToDoRepository>();
 builder.Services.AddScoped<IRedisService, RedisService>();
 builder.Services.AddScoped<IToDoService, ToDoService>();
 
