@@ -5,6 +5,9 @@ using System.Text.Json;
 using onboarding.dal;
 using onboarding.bll.Interfaces;
 using onboarding.dal.Models;
+using Microsoft.ApplicationInsights;
+using static Microsoft.ApplicationInsights.MetricDimensionNames.TelemetryContext;
+using Microsoft.ApplicationInsights.DataContracts;
 
 namespace onboarding.bll.Services
 {
@@ -12,12 +15,15 @@ namespace onboarding.bll.Services
     {
         private readonly IConnection _connection;
         private readonly IModel _channel;
+        private readonly TelemetryClient _telemetryClient;
+        
         private readonly UnitOfWork _unitOfWork;
         private readonly IRedisService _redisService;
-        public ToDoService(UnitOfWork unitOfWork, IRedisService redisService)
+        public ToDoService(UnitOfWork unitOfWork, IRedisService redisService, TelemetryClient telemetryClient)
         {
             _unitOfWork = unitOfWork;
             _redisService = redisService;
+            _telemetryClient = telemetryClient;
 
             var factory = new ConnectionFactory()
             {
@@ -32,8 +38,36 @@ namespace onboarding.bll.Services
 
         public void SendNotification(string msg)
         {
-            var body = Encoding.UTF8.GetBytes(msg);
-            _channel.BasicPublish(exchange: "", routingKey: "notificationQueue", basicProperties: null, body: body);
+            string queueName = "notificationQueue";
+            var dependencyTelemetry = new DependencyTelemetry
+            {
+                Type = "RabbitMQ",
+                Target = queueName,
+                Data = msg,
+                Name = "Send Message"
+            };
+
+            var operation = _telemetryClient.StartOperation(dependencyTelemetry);
+            try
+            {
+
+                var body = Encoding.UTF8.GetBytes(msg);
+                _channel.BasicPublish(exchange: "", routingKey: queueName, basicProperties: null, body: body);
+
+                _telemetryClient.TrackDependency(dependencyTelemetry);
+                operation.Telemetry.Success = true;
+            }
+            catch (Exception ex)
+            {
+                operation.Telemetry.Success = false;
+
+                _telemetryClient.TrackException(ex); 
+                _telemetryClient.TrackDependency(dependencyTelemetry);
+            }
+            finally
+            {
+                _telemetryClient.StopOperation(operation);
+            }
         }
 
         public List<ToDoItem> GetAllToDos() { return _unitOfWork.ToDoRepository.GetAllToDos(); }
@@ -44,7 +78,7 @@ namespace onboarding.bll.Services
             ToDoItem toDo = _unitOfWork.ToDoRepository.AddToDo(trimmedTitle);
             _unitOfWork.Save();
 
-            _redisService.SetStringAsync<ToDoItem>($"todoitem:{toDo.Id}", toDo);
+            _redisService.SetStringAsync($"todoitem:{toDo.Id}", toDo);
 
             SendNotification($"ToDo item added: {toDo.Title}");
 

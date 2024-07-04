@@ -1,3 +1,5 @@
+using Microsoft.ApplicationInsights.Extensibility;
+using Microsoft.ApplicationInsights;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using onboarding.bll.Interfaces;
@@ -6,6 +8,15 @@ using onboarding.dal;
 using System.Reflection;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddApplicationInsightsTelemetry(options => 
+{
+    options.ConnectionString = builder.Configuration.GetConnectionString("AZURE_APPLICATIONINSIGHTS_CONNECTIONSTRING");
+});
+
+// Register TelemetryClient as a singleton
+builder.Services.AddSingleton<ITelemetryInitializer, OperationCorrelationTelemetryInitializer>();
+builder.Services.AddSingleton<TelemetryClient>();
 
 var connection = Environment.GetEnvironmentVariable("AZURE_SQL_CONNECTIONSTRING");
 if (builder.Environment.IsDevelopment())
