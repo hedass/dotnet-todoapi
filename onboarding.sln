@@ -12,9 +12,10 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{F6213DF1-0155-4FF2-B9E0-5E54990519EA}"
 	ProjectSection(SolutionItems) = preProject
 		.gitignore = .gitignore
+		Dockerfile = Dockerfile
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "onboarding.bll.test", "onboarding.bll.test\onboarding.bll.test.csproj", "{E61C9637-AC16-4531-95E2-08C4D003BCF8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "onboarding.bll.test", "onboarding.bll.test\onboarding.bll.test.csproj", "{E61C9637-AC16-4531-95E2-08C4D003BCF8}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
