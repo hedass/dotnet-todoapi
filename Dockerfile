@@ -13,12 +13,8 @@ FROM mcr.microsoft.com/dotnet/aspnet:6.0 AS runtime
 WORKDIR /app
 COPY --from=build /app/publish .
 
-# Set ASP.NET Core environment variables
-ENV ASPNETCORE_URLS=http://+:80
-ENV ASPNETCORE_ENVIRONMENT=Production
-
 # Expose ports http & https
-EXPOSE 5207
-EXPOSE 7017
+EXPOSE 80
+EXPOSE 443
 
 ENTRYPOINT ["dotnet", "onboarding.api.dll"]

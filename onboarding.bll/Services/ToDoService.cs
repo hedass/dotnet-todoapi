@@ -7,8 +7,6 @@ namespace onboarding.bll.Services
 {
     public class ToDoService: IToDoService
     {
-        private readonly IConnection _connection;
-        private readonly IModel _channel;
         private readonly INotificationService _notificationService;
         
         private readonly IUnitOfWork _unitOfWork;
@@ -18,16 +16,6 @@ namespace onboarding.bll.Services
             _unitOfWork = unitOfWork;
             _redisService = redisService;
             _notificationService = notificationService;
-
-            var factory = new ConnectionFactory()
-            {
-                HostName = "localhost",
-                UserName = "guest",
-                Password = "guest"
-            };
-            _connection = factory.CreateConnection();
-            _channel = _connection.CreateModel();
-            _channel.QueueDeclare(queue: "notificationQueue", durable: false, exclusive: false, autoDelete: false, arguments: null);
         }
 
         public List<ToDoItem> GetAllToDos() { return _unitOfWork.ToDoRepository.GetAllToDos(); }

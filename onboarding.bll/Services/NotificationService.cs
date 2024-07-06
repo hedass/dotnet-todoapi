@@ -17,9 +17,11 @@ namespace onboarding.bll.Services
         {
 
             _telemetryClient = telemetryClient;
+
+            var rabbitMqHost = Environment.GetEnvironmentVariable("RABBITMQ_HOST") ?? "localhost";
             var factory = new ConnectionFactory()
             {
-                HostName = "localhost",
+                HostName = rabbitMqHost,
                 UserName = "guest",
                 Password = "guest"
             };

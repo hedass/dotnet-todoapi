@@ -11,17 +11,10 @@ using onboarding.dal.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
-if (!builder.Environment.IsDevelopment())
-{
-    builder.Services.AddHttpsRedirection(options =>
-    {
-        options.HttpsPort = 7017; // Set your HTTPS port here
-    });
-}
-
 builder.WebHost.ConfigureKestrel(serverOptions =>
 {
-    serverOptions.Listen(System.Net.IPAddress.Any, 5207); // Listen on all network interfaces on port 5207
+    serverOptions.ListenAnyIP(80); // Default HTTP port
+    serverOptions.ListenAnyIP(443); // Another port if needed
 });
 
 builder.Services.AddApplicationInsightsTelemetry(options => 
@@ -34,7 +27,6 @@ builder.Services.AddSingleton<ITelemetryInitializer, OperationCorrelationTelemet
 builder.Services.AddSingleton<ITelemetryClientService, TelemetryClientService>();
 
 var connection = builder.Configuration.GetConnectionString("AZURE_SQL_CONNECTIONSTRING");
-
 builder.Services.AddDbContext<ToDoItemDbContext>(options => options.UseSqlServer(connection));
 
 // Add services to the container.
